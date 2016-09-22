@@ -1,0 +1,48 @@
+#+TITLE: Some notes on functionalization of mashup composition
+
+
+
+#+LaTeX_CLASS_OPTIONS: [12pt,a4]
+#+LaTeX_HEADER: \usepackage{hyperref}
+#+LaTeX_HEADER: \usepackage{minted}
+#+LaTeX_HEADER: \usepackage{fontspec,xltxtra,xunicode}
+
+#+LATEX_HEADER: \setmainfont[Scale=0.9]{Lato}
+#+LATEX_HEADER: \setmonofont[Scale=0.7]{Menlo}
+
+#+BEGIN_SRC emacs-lisp :exports none
+(setq 
+     org-latex-image-default-width nil 
+      )
+#+END_SRC
+
+
+
+* Background 
+
+It is well understood that the CDT model allows for a declarative expression of
+the type of a context $c$ which we will broadly assume to be values/parameters
+associated with the situational needs in which the query must be answered.
+
+#+latex: \vspace{0.5cm}
+file:./key/page-1-crop.pdf
+#+latex: \vspace{0.5cm}
+
+Each dimension $D_d$ has one value of type indicated by one of children
+$C_{d,i}$, also called *conceptual nodes*. Each children $C$ provides a *view*, i.e.
+some way of extracting interesting data from a particular data store (being it a
+database or a online service). Effectively, this is a function from the context
+$c$ to a set of actual values of the store. We might see this as the information
+value stored into a standard tree leaf.
+
+#+begin_src haskell
+data Context       = (InterestTopic, Role, Maybe Location, Maybe Interface)
+data InterestTopic = Orders (DateRange) | Clients | Food FoodInfo
+data View a        = Context -> a
+
+cdt :: Tree (View a)
+#+end_src
+
+The actual view creation can be seen as a =fold= operation $\phi$ across the tree, where
+the values effectively folded are the views. The fold operation might depend on
+the context values as well \[ \phi(c, v_a, v_1) \rightarrow v_a \]

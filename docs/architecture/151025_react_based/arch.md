@@ -1,11 +1,11 @@
 ```
 i........ s
-.c.....c.     oo
+.c.....c.     o o
 .........
-.v.v.q.q.  g g
+.v.v.q.q.     g g
 .r.....r.
-.k.....k.  a        a
-........i            s
+.k.....k.   x  y  z
+........i           s
 ```
 
 
@@ -22,6 +22,9 @@ i........ s
 | g     | graphql endpoint    | rectangle              |
 | a     | aggregator          | rectangle              |
 | o     | root context config | rectangle              |
+| x     | s1                  | circle                 |
+| y     | s2                  | circle                 |
+| z     | s3                  | circle                 |
 
 
 | src  | dst  | style       | curve | label               | through  | pattern |
@@ -30,3 +33,8 @@ i........ s
 | c    | v    | -latex      |       | \tiny view template |          |         |
 | c    | q    | -latex      |       | \tiny stored query  |          |         |
 | g    | q    | latex-latex |       | \tiny graphql       |          |         |
+| o    | c    | -latex      |       | \tiny config time   |          |         |
+| o    | g    | -latex      |       | \tiny access rules  |          |         |
+| x    | g    | -latex      |       |                     |          |         |
+| y    | g    | -latex      |       |                     |          |         |
+| z    | g    | -latex      |       |                     |          |         |

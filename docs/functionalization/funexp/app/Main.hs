@@ -10,13 +10,13 @@ data Concept = Customer Int
                | Orders Int
                | Food 
                | Web 
-               | SmartPhone View deriving (Show)
+               | SmartPhone deriving (Show)
 
 data View        = E String | Empty deriving (Show)
 data Dimension   = Role | Location | InterestTopic | Interface deriving (Show)
 
 data Context     = Ctx [ Concept ] deriving (Show)
-data NodeData    = D Dimension | C (Concept -> Maybe View) | Root
+data NodeData    = D Dimension | C (Context -> Maybe View) | Root
 
 
 instance Monoid View where
@@ -28,20 +28,19 @@ instance Monoid View where
 tailor :: Context -> NodeData -> View
 tailor _ Root             = mempty
 tailor _ (D _)            = mempty
-tailor (Ctx []) (C c)     = mempty
-tailor (Ctx (x:xs)) (C c) = case c x of
-  Just v -> v
-  Nothing -> tailor (Ctx xs) (C c)
+tailor cx (C c)           = fromMaybe mempty (c cx) 
 
-customerView :: Concept -> Maybe View
-customerView (Customer n) = Just $ E $ "select customers where id=" ++ show n
-customerView _ = Nothing
+customerView :: Context -> Maybe View
+customerView (Ctx []) = Nothing
+customerView (Ctx (Customer n:_)) = Just $ E $ "select customers where id=" ++ show n
+customerView (Ctx (_:xs)) = customerView (Ctx xs)
 
-webView :: Concept -> Maybe View
-webView Web = Just $ E "select _ where type=web"
-webView _ = Nothing
+webView :: Context -> Maybe View
+webView (Ctx []) = Nothing
+webView (Ctx (Web:_)) = Just $ E "select _ where type=web"
+webView (Ctx (_:xs)) = webView (Ctx xs)
 
-leaf :: (Concept -> Maybe View) -> Tree NodeData
+leaf :: (Context -> Maybe View) -> Tree NodeData
 leaf v = Node (C v) []
 
 dim :: Dimension -> Forest NodeData -> Tree NodeData
@@ -54,8 +53,9 @@ cdt = Node Root [
         dim Interface [ leaf webView ]
   ]
 
-context = Ctx [ Web ]
+context = Ctx [ Web, Customer 3 ]
 
+getViews :: Foldable t => Context -> t NodeData -> View
 getViews ctx = foldMap (tailor ctx)
 
 main = putStrLn "Hello!"

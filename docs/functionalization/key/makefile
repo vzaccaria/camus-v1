@@ -1,5 +1,6 @@
 all: \
-	page-1-crop.pdf 
+	page-1-crop.pdf \
+	page-2-crop.pdf
 
 page-%-full.pdf: Drawings.pdf
 	pdftk $< cat $*-$* output $@

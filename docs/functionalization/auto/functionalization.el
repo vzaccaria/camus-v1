@@ -21,6 +21,10 @@
     "xltxtra"
     "xunicode")
    (LaTeX-add-labels
-    "sec:orgheadline1"))
+    "sec:orgheadline1"
+    "sec:orgheadline5"
+    "sec:orgheadline2"
+    "sec:orgheadline3"
+    "sec:orgheadline4"))
  :latex)
 

@@ -16,7 +16,7 @@
       )
 #+END_SRC
 
-
+#+Latex: \newpage
 
 * Background 
 
@@ -24,25 +24,113 @@ It is well understood that the CDT model allows for a declarative expression of
 the type of a context $c$ which we will broadly assume to be values/parameters
 associated with the situational needs in which the query must be answered.
 
-#+latex: \vspace{0.5cm}
+#+latex: \vspace{0.25cm}
+#+attr_latex: :width 8cm :float figure
 file:./key/page-1-crop.pdf
-#+latex: \vspace{0.5cm}
+#+latex: \vspace{0.25cm}
 
 Each dimension $D_d$ has one value of type indicated by one of children
-$C_{d,i}$, also called *conceptual nodes*. Each children $C$ provides a *view*, i.e.
-some way of extracting interesting data from a particular data store (being it a
-database or a online service). Effectively, this is a function from the context
-$c$ to a set of actual values of the store. We might see this as the information
-value stored into a standard tree leaf.
+$C_{d,i}$, also called *conceptual nodes*. 
+
+Each children $C$ can have one or more parameters and provides a *view*, i.e. some way of
+extracting interesting data from a particular data store (being it a database or
+a online service). 
+
+#+Latex: \newpage
+
+* Operation implementation
+
+Let us try to produce an implementation of the following CDT:
+
+#+latex: \vspace{0.25cm}
+#+attr_latex: :width 8cm :float figure
+file:./key/page-2-crop.pdf
+#+latex: \vspace{0.25cm}
+
+We can identify the following dimensions which can be seen as instances of an enumerative type: 
 
 #+begin_src haskell
-data Context       = (InterestTopic, Role, Maybe Location, Maybe Interface)
-data InterestTopic = Orders (DateRange) | Clients | Food FoodInfo
-data View a        = Context -> a
-
-cdt :: Tree (View a)
+data Dimension   = Role | InterestTopic | Interface
 #+end_src
 
-The actual view creation can be seen as a =fold= operation $\phi$ across the tree, where
-the values effectively folded are the views. The fold operation might depend on
-the context values as well \[ \phi(c, v_a, v_1) \rightarrow v_a \]
+and the following concepts:
+
+#+begin_src haskell
+data Concept = Customer Int
+               | Restaurant
+               | Orders Int
+               | Food 
+               | Web 
+               | SmartPhone 
+#+end_src
+
+Finally we define a context as an array of concepts with their own values:
+
+#+begin_src haskell
+data Context     = Ctx [ Concept ] deriving (Show)
+#+end_src
+
+** Describing the tree
+
+We can thus see the CDT as a tree of nodes (=Tree NodeData=), where each node can
+be one of three things:
+
+#+begin_src haskell 
+data NodeData    = D Dimension | C (Context -> Maybe View) | Root
+#+end_src
+
+Each node, in fact, associates a concept with a view which we implement as a
+function (=Context -> Maybe View=). For example, the node associated with the
+=Customer= concept looks in the context to see whether there is a request for a
+specific context value; in our example queries are just sql-like strings:
+
+#+begin_src haskell
+customerView :: Context -> Maybe View
+customerView (Ctx []) = Nothing
+customerView (Ctx (Customer n:_)) = Just $ E $ "select customers where id=" ++ show n
+customerView (Ctx (_:xs)) = customerView (Ctx xs)
+#+end_src
+
+** Working with the tree 
+
+First of all, we should define views as a monoid with a unit (=mempty=) and an
+operator (=mappend=) to join them; in our case the operator joins query strings:
+
+#+begin_src haskell
+instance Monoid View where
+  mempty              = Empty
+  mappend Empty x     = x
+  mappend y Empty     = y
+  mappend (E x) (E y) = E (x ++ " doubleintersection " ++ y)
+#+end_src
+
+The actual view creation can be seen as a =fold= operation of views that each
+concept node generates given the current context. In the following, function =f=
+is used to transform each node into either a valid view or the empty view.  
+
+#+begin_src haskell
+getViews :: Foldable t => Context -> t NodeData -> View
+getViews ctx = foldMap (f ctx) where 
+    f cx (C c)  = fromMaybe mempty (c cx) 
+    f _         = mempty
+#+end_src
+
+** Example operation
+
+Given:
+
+#+begin_src haskell
+context = Ctx [ Web, Customer 3 ]
+cdt = Node Root [
+        dim Role [ leaf customerView ],
+        dim InterestTopic [],
+        dim Interface [ leaf webView ]
+  ]
+#+end_src
+
+ getting the views gives:
+
+: λ> getViews context cdt
+: E "select customers where id=3 doubleintersection select _ where type=web"
+  
+ 
